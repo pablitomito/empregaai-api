@@ -5,4 +5,4 @@ nixPkgs = ["nodejs_20"]
 cmds = ["npm ci"]
 
 [start]
-cmd = "npx ts-node src/server.ts"
+cmd = "ls -R && npx ts-node src/server.ts"
