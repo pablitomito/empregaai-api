@@ -20,6 +20,6 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*", "server.ts"],
+  "include": ["src/**/*", "src/server.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
