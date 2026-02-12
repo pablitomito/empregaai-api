@@ -43,7 +43,7 @@ const userSchema = new mongoose.Schema({
 // 2. Criação do Modelo (se já tiveres 'const User = ...', apenas garante que ele usa o schema acima)
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-app.post('/auth/login', async (req: Request, res: Response) => {
+app.post('/api/auth/cadastro', async (req: Request, res: Response) => {
   try {
     // 1. Forçamos os dados a serem Strings puras para não haver erro de tipo
     const email = String(req.body.email).trim();
