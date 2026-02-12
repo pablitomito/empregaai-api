@@ -37,8 +37,7 @@ const userSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  // ESTE É O CAMPO NOVO:
-  profileStatus: { type: String, default: 'pending' } 
+  profileStatus: { type: String, default: 'pending' }
 });
 
 // 2. Criação do Modelo (se já tiveres 'const User = ...', apenas garante que ele usa o schema acima)
