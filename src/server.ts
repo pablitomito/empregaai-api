@@ -35,13 +35,14 @@ const UserSchema = new mongoose.Schema({
 const User = mongoose.model('User', UserSchema);
 
 // 2. Rota de Registro REAL
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', async (req, res): Promise<any> => { // Adicionamos : Promise<any> para o TS não reclamar
   try {
     const { fullName, email, password } = req.body;
 
     // Verificar se o usuário já existe
     const userExists = await User.findOne({ email });
     if (userExists) {
+      // O return aqui é essencial para o TS saber que a função para aqui
       return res.status(400).json({ message: "Este e-mail já está cadastrado." });
     }
 
@@ -49,11 +50,11 @@ app.post('/api/auth/register', async (req, res) => {
     const newUser = await User.create({
       fullName,
       email,
-      password // No futuro, vamos encriptar isto com bcrypt!
+      password 
     });
 
-    // Enviar resposta de sucesso com um "Token" (por enquanto manual)
-    res.status(201).json({
+    // Sempre retornar a resposta final
+    return res.status(201).json({
       success: true,
       data: {
         token: "token_real_" + newUser._id, 
@@ -67,10 +68,10 @@ app.post('/api/auth/register', async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erro interno no servidor ao criar conta." });
+    // Garantir que o catch também retorne uma resposta
+    return res.status(500).json({ message: "Erro interno no servidor ao criar conta." });
   }
 });
-
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`✅ Servidor a rodar na porta ${PORT}`);
 });
