@@ -5,9 +5,12 @@ const app = express();
 // FORÇAMOS a porta 5000 que é a que o Railway está tentando usar
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
-app.use(express.json());
-
+app.use(cors({
+  origin: 'https://www.pablito.my', // Domínio exato do seu frontend
+  credentials: true,               // Permite o envio de cookies/headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.get('/', (req, res) => {
   res.send('🚀 CONEXÃO ESTABELECIDA! O servidor Express está funcionando.');
 });
