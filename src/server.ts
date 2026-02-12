@@ -43,52 +43,95 @@ const userSchema = new mongoose.Schema({
 // 2. Criação do Modelo (se já tiveres 'const User = ...', apenas garante que ele usa o schema acima)
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-app.post('/api/auth/cadastro', async (req: Request, res: Response) => {
+// ROTA DE LOGIN (Ajustada e Profissional)
+app.post('/api/auth/login', async (req, res) => {
   try {
-    // 1. Forçamos os dados a serem Strings puras para não haver erro de tipo
-    const email = String(req.body.email).trim();
-    const password = String(req.body.password).trim();
+    const { email, password } = req.body;
 
-    console.log(`Tentativa de login: ${email}`);
+    // 1. Procurar o usuário pelo email (usando trim para evitar erros de digitação)
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
 
-    // 2. Procuramos o usuário
-    const user = await User.findOne({ email: email });
-
+    // 2. Se o usuário não existir
     if (!user) {
-      console.log("Usuário não existe no banco.");
-      return res.status(401).json({ message: "E-mail não encontrado." });
+      return res.status(401).json({ 
+        success: false, 
+        message: "E-mail ou palavra-passe incorretos." 
+      });
     }
 
-    // 3. O TESTE REAL: Vamos logar no console o que está a acontecer
-    console.log("Senha do Banco:", `"${user.password}"`);
-    console.log("Senha Enviada:", `"${password}"`);
-
-    // Comparamos garantindo que ambos são strings
-    if (String(user.password) !== String(password)) {
-      console.log("O servidor acha que são diferentes!");
-      return res.status(401).json({ message: "Senha incorreta no sistema." });
+    // 3. Verificar a senha (comparação direta por enquanto)
+    if (user.password !== password) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "E-mail ou palavra-passe incorretos." 
+      });
     }
 
-    // Se chegou aqui, deu certo!
-   // No final da tua rota de login, quando o login dá certo:
-return res.status(200).json({
-  success: true,
-  data: {
-    token: "...",
-    user: {
-      id: user._id,
-      fullName: user.fullName,
-      email: user.email,
-      profileStatus: user.profileStatus // ADICIONA ESTA LINHA AQUI
-    }
-  }
-});
-    
+    // 4. SUCESSO! Retornar os dados necessários para o Frontend
+    return res.status(200).json({
+      success: true,
+      message: "Login realizado com sucesso!",
+      data: {
+        token: "token_gerado_" + user._id, // Depois substituiremos por um JWT real
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          profileStatus: user.profileStatus // FUNDAMENTAL para a lógica do Dashboard
+        }
+      }
+    });
 
   } catch (error: any) {
-    return res.status(500).json({ message: "Erro: " + error.message });
+    console.error("Erro no login:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Erro interno no servidor." 
+    });
   }
 });
+// ROTA DE CADASTRO (O que estava a faltar!)
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { fullName, email, password } = req.body;
+
+    // 1. Verificar se o usuário já existe
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: "Este e-mail já está registado." });
+    }
+
+    // 2. Criar o novo usuário (com o status 'pending' que combinámos!)
+    const newUser = new User({
+      fullName,
+      email,
+      password, // Depois vamos colocar Bcrypt aqui!
+      profileStatus: 'pending' 
+    });
+
+    // 3. Salvar no MongoDB
+    await newUser.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Usuário criado com sucesso!",
+      data: {
+        user: {
+          id: newUser._id,
+          fullName: newUser.fullName,
+          email: newUser.email,
+          profileStatus: newUser.profileStatus
+        }
+      }
+    });
+
+  } catch (error: any) {
+    console.error("Erro no cadastro:", error);
+    return res.status(500).json({ message: "Erro ao criar conta." });
+  }
+});
+
+  
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`✅ Servidor online na porta ${PORT}`);
 });
