@@ -1,4 +1,5 @@
-import express, { Request, Response } from 'express';
+import express from 'express'; 
+// Ou simplesmente remove os nomes que o erro acusou
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -135,3 +136,4 @@ app.post('/api/auth/register', async (req, res) => {
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`✅ Servidor online na porta ${PORT}`);
 });
+
