@@ -7,7 +7,7 @@ dotenv.config();
 
 const app = express();
 app.use(express.json()); // ESSA LINHA É OBRIGATÓRIA
-app.use(cors());
+
 
 const PORT = process.env.PORT || 5000;
 // Aqui ele tenta ler de qualquer um dos nomes que possas ter posto no Render/Vercel
@@ -17,8 +17,8 @@ const MONGO_URI = process.env.DATABASE_URL || process.env.MONGODB_URI;
 // ... dentro do teu app
 
 app.use(cors({
-  origin: 'https://www.pablito.my', // O teu domínio exato do frontend
-  credentials: true,               // Permite o envio de cookies/tokens
+  origin: 'https://www.pablito.my', // O teu domínio exato (sem a barra no fim!)
+  credentials: true,               // Permite o envio de cookies/auth headers
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
