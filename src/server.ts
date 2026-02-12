@@ -16,11 +16,22 @@ app.get('/', (req, res) => {
 });
 
 // Rota para o seu Axios não dar erro 404
+// Rota atualizada para o seu frontend entender
 app.post('/api/auth/register', (req, res) => {
-  res.json({ success: true, message: "Servidor respondeu!" });
+  // Aqui simulamos o que um banco de dados faria
+  res.json({ 
+    success: true, 
+    data: {
+      token: "token_gerado_pelo_servidor", // O frontend precisa disto!
+      user: {
+        id: 1,
+        email: "usuario@teste.com",
+        fullName: "Usuário Teste"
+      }
+    }
+  });
 });
 
-// O SEGREDO: '0.0.0.0' é obrigatório no Railway
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`✅ Servidor escutando na porta ${PORT}`);
 });
