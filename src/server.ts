@@ -6,7 +6,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+app.use(express.json()); // ESSA LINHA É OBRIGATÓRIA
+app.use(cors());
 
 const PORT = process.env.PORT || 5000;
 // Aqui ele tenta ler de qualquer um dos nomes que possas ter posto no Render/Vercel
@@ -28,13 +29,19 @@ if (MONGO_URI) {
   console.warn('⚠️ Atenção: MONGO_URI não encontrada nas variáveis de ambiente!');
 }
 
-const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
+// 1. Definição da estrutura do Usuário
+const userSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-}));
+  // ESTE É O CAMPO NOVO:
+  profileStatus: { type: String, default: 'pending' } 
+});
 
-app.post('/api/auth/login', async (req: Request, res: Response) => {
+// 2. Criação do Modelo (se já tiveres 'const User = ...', apenas garante que ele usa o schema acima)
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+app.post('/auth/login', async (req: Request, res: Response) => {
   try {
     // 1. Forçamos os dados a serem Strings puras para não haver erro de tipo
     const email = String(req.body.email).trim();
@@ -61,13 +68,20 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
     }
 
     // Se chegou aqui, deu certo!
-    return res.status(200).json({
-      success: true,
-      data: {
-        token: "token_pablito_venceu_" + user._id,
-        user: { id: user._id, fullName: user.fullName, email: user.email }
-      }
-    });
+   // No final da tua rota de login, quando o login dá certo:
+return res.status(200).json({
+  success: true,
+  data: {
+    token: "...",
+    user: {
+      id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      profileStatus: user.profileStatus // ADICIONA ESTA LINHA AQUI
+    }
+  }
+});
+    
 
   } catch (error: any) {
     return res.status(500).json({ message: "Erro: " + error.message });
