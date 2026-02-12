@@ -34,35 +34,45 @@ const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema(
   password: { type: String, required: true },
 }));
 
-app.post('/api/auth/register', async (req: Request, res: Response) => {
+app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
-    const { fullName, email, password } = req.body;
+    // 1. Forçamos os dados a serem Strings puras para não haver erro de tipo
+    const email = String(req.body.email).trim();
+    const password = String(req.body.password).trim();
 
-    // Se o Mongo estiver ligado, tentamos salvar
-    if (mongoose.connection.readyState === 1) {
-      const userExists = await User.findOne({ email });
-      if (userExists) {
-        return res.status(400).json({ message: "Este e-mail já está cadastrado." });
-      }
-      await User.create({ fullName, email, password });
+    console.log(`Tentativa de login: ${email}`);
+
+    // 2. Procuramos o usuário
+    const user = await User.findOne({ email: email });
+
+    if (!user) {
+      console.log("Usuário não existe no banco.");
+      return res.status(401).json({ message: "E-mail não encontrado." });
     }
 
-    // Mesmo que o Mongo falhe, o teu botão vai FUNCIONAR e redirecionar
-    return res.status(201).json({
+    // 3. O TESTE REAL: Vamos logar no console o que está a acontecer
+    console.log("Senha do Banco:", `"${user.password}"`);
+    console.log("Senha Enviada:", `"${password}"`);
+
+    // Comparamos garantindo que ambos são strings
+    if (String(user.password) !== String(password)) {
+      console.log("O servidor acha que são diferentes!");
+      return res.status(401).json({ message: "Senha incorreta no sistema." });
+    }
+
+    // Se chegou aqui, deu certo!
+    return res.status(200).json({
       success: true,
       data: {
-        token: "token_pablito_sucesso",
-        user: { fullName, email }
+        token: "token_pablito_venceu_" + user._id,
+        user: { id: user._id, fullName: user.fullName, email: user.email }
       }
     });
 
   } catch (error: any) {
-    console.error("Erro no registro:", error.message);
-    // Retornamos sucesso fake para não te travar enquanto ajustamos o banco
-    return res.status(201).json({ success: true, data: { token: "temp", user: { fullName: "Erro Banco", email: "teste@teste.com" } } });
+    return res.status(500).json({ message: "Erro: " + error.message });
   }
 });
-
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`✅ Servidor online na porta ${PORT}`);
 });
