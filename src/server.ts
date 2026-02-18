@@ -24,7 +24,7 @@ app.use(
     credentials: true,
   })
 );
-
+ /// testando 
 
 // Rotas da API
 app.use("/api/auth", authRoutes);
