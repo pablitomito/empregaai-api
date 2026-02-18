@@ -257,7 +257,6 @@ const userSchema = new Schema<IUser>(
 );
 
 // Índices para performance
-userSchema.index({ email: 1 });
 userSchema.index({ 'subscription.status': 1 });
 userSchema.index({ createdAt: -1 });
 
