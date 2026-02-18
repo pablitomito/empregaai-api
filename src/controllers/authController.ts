@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { Request, Response } from "express";
 import User from "../models/User";
 import { generateToken } from "../middleware/auth";
