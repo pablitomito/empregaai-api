@@ -1,13 +1,15 @@
+console.log("DEBUG MONGODB_URI:", process.env.MONGODB_URI);
+
 import mongoose from "mongoose";
 
 export const connectDB = async () => {
-  const MONGO_URI = process.env.MONGO_URI;
+  const MONGODB_URI = process.env.MONGODB_URI;
 
-  if (!MONGO_URI) {
-    throw new Error("MONGO_URI não está definido no .env");
+  if (!MONGODB_URI) {
+    throw new Error("MONGODB_URI não está definido no .env");
   }
 
-  await mongoose.connect(MONGO_URI);
+  await mongoose.connect(MONGODB_URI);
   console.log("MongoDB conectado com sucesso!");
 };
 

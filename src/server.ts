@@ -20,10 +20,11 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: "https://www.pablito.my",
+    origin: ["http://localhost:3000", "http://localhost:5173", "https://www.pablito.my"],
     credentials: true,
   })
 );
+
 
 // Rotas da API
 app.use("/api/auth", authRoutes);

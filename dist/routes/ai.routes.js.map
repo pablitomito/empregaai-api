@@ -1,1 +1,0 @@
-{"version":3,"file":"ai.routes.js","sourceRoot":"","sources":["../../src/routes/ai.routes.ts"],"names":[],"mappings":";;AAAA,qCAAiC;AACjC,6CAA6C;AAC7C,8DAGqC;AAErC,MAAM,MAAM,GAAG,IAAA,gBAAM,GAAE,CAAC;AAExB,MAAM,CAAC,IAAI,CAAC,kBAAkB,EAAE,cAAO,EAAE,+BAAgB,CAAC,CAAC;AAC3D,MAAM,CAAC,IAAI,CAAC,wBAAwB,EAAE,cAAO,EAAE,oCAAqB,CAAC,CAAC;AAEtE,kBAAe,MAAM,CAAC"}
