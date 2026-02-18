@@ -67,6 +67,7 @@ export const notFound = (_req: Request, res: Response, _next: NextFunction): voi
 
 // Helper: Wrapper para async/await
 export const asyncHandler =
-  (fn: Function) => (_req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(_req, res, next)).catch(next);
+  (fn: any) => (req: any, res: any, next: any) => {
+    return Promise.resolve(fn(req, res, next)).catch(next);
   };
+
