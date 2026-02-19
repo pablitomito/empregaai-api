@@ -114,7 +114,7 @@ const userSchema = new Schema<IUser>(
 }
 ,
       minlength: [6, 'A senha deve ter no mínimo 6 caracteres'],
-      select: false, // Não retorna senha por padrão nas queries
+      select: true, // Não retorna senha por padrão nas queries
     },
     googleId: {
       type: String,

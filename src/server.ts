@@ -1,8 +1,9 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 
-// Carrega variáveis de ambiente
+
+
 dotenv.config();
 
 // Conecta ao MongoDB (executa automaticamente dentro do arquivo)
