@@ -261,14 +261,14 @@ userSchema.index({ 'subscription.status': 1 });
 userSchema.index({ createdAt: -1 });
 
 // Middleware: Hash da senha antes de salvar
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (this: IUser, next: (err?: Error) => void) {
   if (!this.isModified('password')) return next();
-  
+
   if (this.password) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   }
-  
+
   next();
 });
 
