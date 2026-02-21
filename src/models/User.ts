@@ -32,9 +32,12 @@ export interface IUser extends Document {
   experiences?: {
     position: string;
     company: string;
-    startDate: string; // MM/YYYY
-    endDate?: string; // MM/YYYY
-    isCurrentJob: boolean;
+  startMonth: string;
+    startYear: string;
+    endMonth: string;
+    endYear: string;
+    current: boolean;
+
     description: string;
   }[];
   

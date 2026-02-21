@@ -67,7 +67,20 @@ const cvSchema = new Schema<ICV>(
         profilePhoto: String,
       },
       professionalSummary: String,
-      experiences: [Schema.Types.Mixed],
+      experiences: [
+  {
+    id: String,
+    company: String,
+    position: String,
+    description: String,
+    startMonth: String,
+    startYear: String,
+    endMonth: String,
+    endYear: String,
+    current: Boolean,
+  }
+],
+
       education: [Schema.Types.Mixed],
       skills: [String],
       languages: [Schema.Types.Mixed],
