@@ -18,12 +18,12 @@ const app = express();
 
 // Middlewares globais
 app.use(express.json());
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "http://localhost:5173", "https://www.pablito.my"],
-    credentials: true,
-  })
-);
+app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
  /// testando 
 
 // Rotas da API
