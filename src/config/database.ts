@@ -2,7 +2,9 @@ import mongoose from 'mongoose';
 
 const connectDB = async (): Promise<void> => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/emprega-ai';
+    const mongoURI = process.env.MONGODB_URI;
+console.log("MONGO URI:", mongoURI);
+
     
     const options = {
       // Opções recomendadas

@@ -120,7 +120,7 @@ applicationSchema.index({ userId: 1, createdAt: -1 });
 applicationSchema.index({ jobId: 1, userId: 1 }, { unique: true }); // Previne candidaturas duplicadas
 
 // Middleware: Adicionar ao histórico quando status mudar
-applicationSchema.pre('save', function(next) {
+applicationSchema.pre('save', function (this: any, next: (err?: Error) => void) {
   if (this.isModified('status')) {
     this.statusHistory.push({
       status: this.status,
@@ -129,6 +129,7 @@ applicationSchema.pre('save', function(next) {
   }
   next();
 });
+
 
 const Application = mongoose.model<IApplication>('Application', applicationSchema);
 

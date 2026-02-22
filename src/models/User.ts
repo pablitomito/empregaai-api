@@ -32,9 +32,12 @@ export interface IUser extends Document {
   experiences?: {
     position: string;
     company: string;
-    startDate: string; // MM/YYYY
-    endDate?: string; // MM/YYYY
-    isCurrentJob: boolean;
+  startMonth: string;
+    startYear: string;
+    endMonth: string;
+    endYear: string;
+    current: boolean;
+
     description: string;
   }[];
   
@@ -114,7 +117,7 @@ const userSchema = new Schema<IUser>(
 }
 ,
       minlength: [6, 'A senha deve ter no mínimo 6 caracteres'],
-      select: false, // Não retorna senha por padrão nas queries
+      select: true, // Não retorna senha por padrão nas queries
     },
     googleId: {
       type: String,
@@ -261,14 +264,14 @@ userSchema.index({ 'subscription.status': 1 });
 userSchema.index({ createdAt: -1 });
 
 // Middleware: Hash da senha antes de salvar
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (this: IUser, next: (err?: Error) => void) {
   if (!this.isModified('password')) return next();
-  
+
   if (this.password) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
   }
-  
+
   next();
 });
 
