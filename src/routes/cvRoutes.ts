@@ -1,4 +1,8 @@
 import { Router } from 'express';
+import { generateCV } from '../controllers/cvController';
+
 const router = Router();
-// TODO: Implementar rotas
+
+router.post('/generate', generateCV);
+
 export default router;

@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
+import cvRoutes from './routes/cvRoutes';
 
 
 
@@ -31,7 +32,11 @@ app.use(cors({
 app.use("/api/auth", authRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/subscription", subscriptionRoutes); // só se existir
-
+app.use('/api/cv', cvRoutes);
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'EmpregaAI Backend' });
+});
 // Porta
 const PORT = process.env.PORT || 5000;
 
