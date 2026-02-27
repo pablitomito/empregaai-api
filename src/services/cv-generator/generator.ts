@@ -1,16 +1,19 @@
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 import { UserCVData } from './types';
 import { selectTemplate } from './selector';
 import { generateExecutivoTemplate } from './templates/executivo';
 import { generateTechModernTemplate } from './templates/tech-modern';
 import { generateMinimalistaTemplate } from './templates/minimalista';
+import { generateCreativoTemplate } from './templates/criativo';          
+import { generateATSOptimizedTemplate } from './templates/ats-optimized'; 
 
 export async function generateCVPDF(userData: UserCVData): Promise<Buffer> {
   console.log('🎨 Gerando CV para:', userData.name);
-  
+
   const templateName = selectTemplate(userData);
-  
+
   let html: string;
+
   switch (templateName) {
     case 'executivo':
       html = generateExecutivoTemplate(userData);
@@ -21,30 +24,38 @@ export async function generateCVPDF(userData: UserCVData): Promise<Buffer> {
     case 'minimalista':
       html = generateMinimalistaTemplate(userData);
       break;
+        case 'criativo':                                   
+      html = generateCreativoTemplate(userData);       
+      break;                                             
+    case 'ats-optimized':                               
+      html = generateATSOptimizedTemplate(userData);    
+      break;                                             
     default:
       html = generateMinimalistaTemplate(userData);
+      
   }
-  
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage'
-    ]
+
+  const browser = await chromium.launch({
+    headless: true
   });
-  
+
   const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: 'networkidle0' });
-  
+  await page.setContent(html, { waitUntil: 'networkidle' });
+
   const pdf = await page.pdf({
     format: 'A4',
     printBackground: true,
-    margin: { top: 0, right: 0, bottom: 0, left: 0 }
+    margin: {
+      top: '10mm',
+      right: '10mm',
+      bottom: '10mm',
+      left: '10mm'
+    }
   });
-  
+
   await browser.close();
-  
-  console.log('✅ PDF gerado!');
-  return pdf;
+
+  console.log('✅ PDF gerado com sucesso!');
+
+  return Buffer.from(pdf);
 }

@@ -37,7 +37,7 @@ export interface Language {
 
 export interface TemplateConfig {
   name: string;
-  category: 'executivo' | 'tech' | 'minimalista';
+  category: 'executivo' | 'tech' | 'minimalista' | 'criativo' | 'ats';
   weight: number;
   suitableFor: string[];
 }

@@ -18,6 +18,18 @@ const templates: TemplateConfig[] = [
     category: 'minimalista',
     weight: 35,
     suitableFor: ['admin', 'comercial', 'vendas', 'marketing', 'assistente']
+  }, 
+  {
+    name: 'criativo',
+    category: 'minimalista', // ou criar nova categoria
+    weight: 20,
+    suitableFor: ['designer', 'criativo', 'marketing', 'publicidade', 'ux']
+  },
+  {
+    name: 'ats-optimized',
+    category: 'minimalista',
+    weight: 15,
+    suitableFor: ['junior', 'entry', 'estagio', 'trainee']
   }
 ];
 
