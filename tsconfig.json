@@ -16,6 +16,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "noUnusedLocals": true,
+    "types": ["node", "jest"],
     "noUnusedParameters": false,
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": true
