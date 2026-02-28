@@ -11,16 +11,7 @@ router.post("/checkout", async (req, res) => {
       return res.status(400).json({ error: "Email ou userId não fornecido" });
     }
 
-    let priceId: string;
-    let isSubscription = false;
-
-    if (type === "distribuir") {
-      priceId = process.env.STRIPE_PRICE_DISTRIBUIR!;
-      isSubscription = true; // recorrente
-    } else if (type === "pdf") {
-      priceId = process.env.STRIPE_PRICE_PDF!;
-      isSubscription = false; // one-time
-    } else {
+    if (type !== "distribuir" && type !== "pdf") {
       return res.status(400).json({ error: "Tipo inválido" });
     }
 
