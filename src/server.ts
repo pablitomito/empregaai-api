@@ -6,11 +6,17 @@ import cvRoutes from "./routes/cvRoutes";
 import stripeRoutes from "./routes/stripe";
 import webhookRoutes from "./routes/webhookRoutes";
 import authRoutes from "./routes/authRoutes";
+import mongoose from "mongoose";
+
+import connectDB from "./config/database";
+
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+connectDB();
 
 // CORS
 const allowedOrigins = [
@@ -55,6 +61,11 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+mongoose
+  .connect(process.env.MONGO_URI!)
+  .then(() => console.log("MongoDB conectado"))
+  .catch((err) => console.error("Erro ao conectar ao MongoDB:", err));
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend rodando na porta ${PORT}`);
