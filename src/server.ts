@@ -1,45 +1,43 @@
-import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
-import cvRoutes from './routes/cvRoutes';
+import dotenv from "dotenv";
 
-
+import cvRoutes from "./routes/cvRoutes";
+import stripeRoutes from "./routes/stripe";
+import webhookRoutes from "./routes/webhookRoutes";
 
 dotenv.config();
 
-// Conecta ao MongoDB (executa automaticamente dentro do arquivo)
-import "./config/mongodb";
-
-// Rotas
-import authRoutes from "./routes/authRoutes";
-import aiRoutes from "./routes/ai.routes";
-import subscriptionRoutes from "./routes/subscriptionRoutes"; // caso exista
-
-// Inicializa o Express
 const app = express();
+const PORT = process.env.PORT || 3001;
 
-// Middlewares globais
+// CORS
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  })
+);
+
+// ⚠️ 1. Webhook do Stripe precisa vir ANTES do express.json()
+app.use("/api/stripe", webhookRoutes);
+
+// ⚠️ 2. Agora sim podemos ativar o JSON parser
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
 
- /// testando 
+// Rotas normais
+app.use("/api/cv", cvRoutes);
+app.use("/api/stripe", stripeRoutes);
 
-// Rotas da API
-app.use("/api/auth", authRoutes);
-app.use("/api/ai", aiRoutes);
-app.use("/api/subscription", subscriptionRoutes); // só se existir
-app.use('/api/cv', cvRoutes);
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'EmpregaAI Backend' });
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "EmpregaAI Backend",
+    timestamp: new Date().toISOString(),
+  });
 });
-// Porta
-const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor online na porta ${PORT}`);
+  console.log(`🚀 Backend rodando na porta ${PORT}`);
+  console.log(`📍 Webhook Stripe: http://localhost:${PORT}/api/stripe/webhook`);
 });

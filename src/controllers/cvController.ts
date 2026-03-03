@@ -4,10 +4,17 @@ import { uploadCVToR2 } from '../services/storage/r2-client';
 import { sendCVEmail } from '../services/email/sender';
 import { UserCVData } from '../services/cv-generator/types';
 
-// Gerar CV
 export async function generateCV(req: Request, res: Response) {
   try {
-    const { userData, userId }: { userData: UserCVData; userId: string } = req.body;
+    const { 
+      userData, 
+      userId,
+      sendEmail = false 
+    }: { 
+      userData: UserCVData; 
+      userId: string;
+      sendEmail?: boolean;
+    } = req.body;
     
     if (!userData || !userId) {
       return res.status(400).json({ 
@@ -19,20 +26,31 @@ export async function generateCV(req: Request, res: Response) {
     console.log(`📋 Requisição de CV para: ${userData.name}`);
     
     // 1. Gera PDF
+    console.log('🎨 Gerando PDF...');
     const pdfBuffer = await generateCVPDF(userData);
     
     // 2. Upload para R2
+    console.log('☁️ Fazendo upload para R2...');
     const pdfUrl = await uploadCVToR2(pdfBuffer, userId);
     
-    // 3. Envia email
-    await sendCVEmail(userData.email, userData.name, pdfUrl);
+    // 3. Envia email (se solicitado)
+    if (sendEmail) {
+      console.log('📧 Enviando email...');
+      await sendCVEmail(
+        userData.email, 
+        userData.name, 
+        pdfUrl,
+        pdfBuffer // Anexa o PDF ao email
+      );
+    }
     
-    console.log(`✅ CV gerado e enviado: ${pdfUrl}`);
+    console.log(`✅ CV gerado com sucesso: ${pdfUrl}`);
     
     return res.json({
       success: true,
       pdfUrl,
-      message: 'CV gerado com sucesso!'
+      message: 'CV gerado com sucesso!',
+      emailSent: sendEmail
     });
     
   } catch (error: any) {
@@ -44,78 +62,38 @@ export async function generateCV(req: Request, res: Response) {
     });
   }
 }
-// 🆕 Gerar CV com template específico (para testes)
-export async function generateCVWithTemplate(req: Request, res: Response) {
-  try {
-    const { userData, userId, templateId } = req.body;
-    
-    if (!userData || !userId || !templateId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'userData, userId e templateId são obrigatórios' 
-      });
-    }
-    
-    console.log(`📋 Gerando CV com template: ${templateId}`);
-    
-    // Força o uso de um template específico
-    // (você precisaria adaptar o generator para aceitar templateId)
-    
-    const pdfBuffer = await generateCVPDF(userData);
-    const pdfUrl = await uploadCVToR2(pdfBuffer, userId);
-    
-    return res.json({
-      success: true,
-      pdfUrl,
-      template: templateId,
-      message: `CV gerado com template ${templateId}!`
-    });
-    
-  } catch (error: any) {
-    console.error('❌ Erro:', error);
-    return res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-}
-// 🆕 Listar templates disponíveis
+
 export function listTemplates(req: Request, res: Response) {
   const templates = [
     { 
       id: 'executivo', 
       name: 'Executivo', 
       category: 'Formal',
-      description: 'Ideal para cargos de gestão e liderança',
-      preview: '/previews/executivo.png'
+      description: 'Ideal para cargos de gestão e liderança'
     },
     { 
       id: 'tech-modern', 
       name: 'Tech Modern', 
       category: 'Tecnologia',
-      description: 'Perfeito para profissionais de TI e desenvolvimento',
-      preview: '/previews/tech-modern.png'
+      description: 'Perfeito para profissionais de TI'
     },
     { 
       id: 'minimalista', 
       name: 'Minimalista', 
       category: 'Clean',
-      description: 'Design limpo e elegante para qualquer área',
-      preview: '/previews/minimalista.png'
+      description: 'Design limpo para qualquer área'
     },
     { 
       id: 'criativo', 
       name: 'Criativo', 
       category: 'Design',
-      description: 'Visual impactante para designers e criativos',
-      preview: '/previews/criativo.png'
+      description: 'Para designers e criativos'
     },
     { 
       id: 'ats-optimized', 
       name: 'ATS Optimized', 
       category: 'Robôs',
-      description: 'Otimizado para passar pelos filtros automáticos',
-      preview: '/previews/ats-optimized.png'
+      description: 'Otimizado para filtros automáticos'
     }
   ];
   

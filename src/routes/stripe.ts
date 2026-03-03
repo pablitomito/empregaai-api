@@ -24,6 +24,7 @@ router.post("/checkout", async (req, res) => {
       details: err.message || err,
     });
   }
+  
 });
 
 export default router;

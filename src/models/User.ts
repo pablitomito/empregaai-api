@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 
 // Interface TypeScript para o User
 export interface IUser extends Document {
+  pendingCVData?: any;
+
   // Dados de autenticação
   email: string;
   password: string;
@@ -222,6 +224,12 @@ const userSchema = new Schema<IUser>(
       },
     ],
     
+    // Dados do CV pendente (antes do pagamento)
+pendingCVData: {
+  type: Object,
+  required: false,
+},
+
     // Assinatura
     subscription: {
       status: {
