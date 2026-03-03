@@ -33,13 +33,15 @@ app.use(
     credentials: true,
   })
 );
+app.use(express.json());
+
 app.use("/api/auth", authRoutes);
 
 // ⚠️ 1. Webhook do Stripe precisa vir ANTES do express.json()
 app.use("/api/stripe", webhookRoutes);
 
 // ⚠️ 2. Agora sim podemos ativar o JSON parser
-app.use(express.json());
+
 
 // Rotas normais
 app.use("/api/cv", cvRoutes);
