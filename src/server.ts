@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import cvRoutes from "./routes/cvRoutes";
 import stripeRoutes from "./routes/stripe";
 import webhookRoutes from "./routes/webhookRoutes";
+import authRoutes from "./routes/authRoutes";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use(
     credentials: true,
   })
 );
+app.use("/api/auth", authRoutes);
 
 // ⚠️ 1. Webhook do Stripe precisa vir ANTES do express.json()
 app.use("/api/stripe", webhookRoutes);
