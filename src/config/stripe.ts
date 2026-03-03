@@ -36,24 +36,25 @@ export const createCheckoutSession = async ({
   if (!priceId) throw new Error("PRICE_ID não configurado");
 
   const session = await stripe.checkout.sessions.create({
-    mode: type === "distribuir" ? "subscription" : "payment",
-    customer_email: email,
+  mode: type === "distribuir" ? "subscription" : "payment",
+  customer_email: email,
 
-    line_items: [
-      {
-        price: priceId,
-        quantity: 1,
-      },
-    ],
-
-    success_url: `${FRONTEND_URL}/checkout/success?type=${type}`,
-    cancel_url: `${FRONTEND_URL}/checkout/cancel`,
-
-    metadata: {
-      userId,
-      type,
+  line_items: [
+    {
+      price: priceId,
+      quantity: 1,
     },
-  });
+  ],
+
+  success_url: `${FRONTEND_URL}/success?type=${type}`,
+  cancel_url: `${FRONTEND_URL}/cancel`,
+
+  metadata: {
+    userId,
+    type,
+  },
+});
+
 
   return session;
 };
