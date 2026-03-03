@@ -12,9 +12,24 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // CORS
+const allowedOrigins = [
+  "https://empregaai.vercel.app",
+  "https://www.pablito.my",
+  "https://pablito.my",
+  "http://localhost:3000"
+];
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
   })
 );
 
