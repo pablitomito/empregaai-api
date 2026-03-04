@@ -2,8 +2,7 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface ICV extends Document {
   userId: Types.ObjectId;
-  
-  // Dados do CV
+
   cvData: {
     personalInfo: {
       fullName: string;
@@ -13,38 +12,58 @@ export interface ICV extends Document {
       profilePhoto?: string;
     };
     professionalSummary?: string;
-    experiences: any[];
-    education: any[];
+    experiences: {
+      id?: string;
+      company: string;
+      position: string;
+      description: string;
+      startMonth?: string;
+      startYear?: string;
+      endMonth?: string;
+      endYear?: string;
+      current: boolean;
+    }[];
+    education: {
+      degree: string;
+      institution: string;
+      startYear?: string;
+      endYear?: string;
+    }[];
     skills: string[];
-    languages: any[];
-    projects?: any[];
+    languages: {
+      language: string;
+      proficiency: 'native' | 'fluent' | 'advanced' | 'intermediate' | 'basic';
+    }[];
+    projects?: {
+      title: string;
+      description: string;
+      link?: string;
+    }[];
   };
-  
-  // Vaga relacionada (se foi para uma vaga específica)
+
+  // Vaga relacionada (opcional)
   jobId?: Types.ObjectId;
   jobTitle?: string;
   companyName?: string;
-  
+
   // Conteúdo gerado pela IA
   generatedContent: {
-    optimizedSummary?: string; // Resumo otimizado para a vaga
-    coverLetter?: string; // Carta de apresentação
-    keywords?: string[]; // Palavras-chave ATS
+    optimizedSummary?: string;
+    coverLetter?: string;
+    keywords?: string[];
   };
-  
-  // Arquivo PDF
-  pdfUrl?: string; // URL do PDF no Cloudinary ou S3
+
+  // PDF
+  pdfUrl?: string;
   pdfFileName?: string;
-  
-  // Metadados
-  template: 'modern' | 'classic' | 'minimal' | 'creative';
+
+  // ✅ FIX: template enum alinhado com os templates reais em cv-generator/templates/
+  template: 'executivo' | 'tech-modern' | 'minimalista' | 'criativo' | 'ats-optimized';
+
   language: 'pt' | 'en' | 'es';
-  
-  // Status
   status: 'draft' | 'generated' | 'sent' | 'failed';
   sentAt?: Date;
-  
-  // Timestamps
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,7 +76,7 @@ const cvSchema = new Schema<ICV>(
       required: true,
       index: true,
     },
-    
+
     cvData: {
       personalInfo: {
         fullName: { type: String, required: true },
@@ -68,71 +87,85 @@ const cvSchema = new Schema<ICV>(
       },
       professionalSummary: String,
       experiences: [
-  {
-    id: String,
-    company: String,
-    position: String,
-    description: String,
-    startMonth: String,
-    startYear: String,
-    endMonth: String,
-    endYear: String,
-    current: Boolean,
-  }
-],
-
-      education: [Schema.Types.Mixed],
+        {
+          id: String,
+          company: String,
+          position: String,
+          description: String,
+          startMonth: String,
+          startYear: String,
+          endMonth: String,
+          endYear: String,
+          current: { type: Boolean, default: false },
+        },
+      ],
+      education: [
+        {
+          degree: String,
+          institution: String,
+          startYear: String,
+          endYear: String,
+        },
+      ],
       skills: [String],
-      languages: [Schema.Types.Mixed],
-      projects: [Schema.Types.Mixed],
+      languages: [
+        {
+          language: String,
+          proficiency: {
+            type: String,
+            enum: ['native', 'fluent', 'advanced', 'intermediate', 'basic'],
+          },
+        },
+      ],
+      projects: [
+        {
+          title: String,
+          description: String,
+          link: String,
+        },
+      ],
     },
-    
-    jobId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Job',
-    },
+
+    jobId: { type: Schema.Types.ObjectId, ref: 'Job' },
     jobTitle: String,
     companyName: String,
-    
+
     generatedContent: {
       optimizedSummary: String,
       coverLetter: String,
       keywords: [String],
     },
-    
+
     pdfUrl: String,
     pdfFileName: String,
-    
+
+    // ✅ FIX: alinhado com cv-generator/templates/
     template: {
       type: String,
-      enum: ['modern', 'classic', 'minimal', 'creative'],
-      default: 'modern',
+      enum: ['executivo', 'tech-modern', 'minimalista', 'criativo', 'ats-optimized'],
+      default: 'minimalista',
     },
-    
+
     language: {
       type: String,
       enum: ['pt', 'en', 'es'],
       default: 'pt',
     },
-    
+
     status: {
       type: String,
       enum: ['draft', 'generated', 'sent', 'failed'],
       default: 'draft',
     },
-    
+
     sentAt: Date,
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Índices
 cvSchema.index({ userId: 1, createdAt: -1 });
 cvSchema.index({ status: 1 });
 cvSchema.index({ jobId: 1 });
 
 const CV = mongoose.model<ICV>('CV', cvSchema);
-
 export default CV;
