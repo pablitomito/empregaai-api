@@ -1,105 +1,252 @@
 import { Request, Response } from 'express';
+import { asyncHandler } from '../middleware/errorHandler';
+import CV from '../models/CV';
+import User from '../models/User';
 import { generateCVPDF } from '../services/cv-generator/generator';
-import { uploadCVToR2 } from '../services/storage/r2-client';
-import { sendCVEmail } from '../services/email/sender';
+import { generateResumeAI } from '../services/aiService';
 import { UserCVData } from '../services/cv-generator/types';
 
-export async function generateCV(req: Request, res: Response) {
-  try {
-    const { 
-      userData, 
-      userId,
-      sendEmail = false 
-    }: { 
-      userData: UserCVData; 
-      userId: string;
-      sendEmail?: boolean;
-    } = req.body;
-    
-    if (!userData || !userId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'userData e userId são obrigatórios' 
-      });
-    }
-    
-    console.log(`📋 Requisição de CV para: ${userData.name}`);
-    
-    // 1. Gera PDF
-    console.log('🎨 Gerando PDF...');
-    const pdfBuffer = await generateCVPDF(userData);
-    
-    // 2. Upload para R2
-    console.log('☁️ Fazendo upload para R2...');
-    const pdfUrl = await uploadCVToR2(pdfBuffer, userId);
-    
-    // 3. Envia email (se solicitado)
-    if (sendEmail) {
-      console.log('📧 Enviando email...');
-      await sendCVEmail(
-        userData.email, 
-        userData.name, 
-        pdfUrl,
-        pdfBuffer // Anexa o PDF ao email
-      );
-    }
-    
-    console.log(`✅ CV gerado com sucesso: ${pdfUrl}`);
-    
-    return res.json({
-      success: true,
-      pdfUrl,
-      message: 'CV gerado com sucesso!',
-      emailSent: sendEmail
-    });
-    
-  } catch (error: any) {
-    console.error('❌ Erro ao gerar CV:', error);
-    
-    return res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
+// ============================================================================
+// Utilitário — mapeia IUser + dados IA → UserCVData para o generator.ts
+// ============================================================================
+function mapToUserCVData(user: any, aiData: any): UserCVData {
+  return {
+    name: aiData.fullName || user.fullName,
+    email: aiData.email || user.email,
+    phone: aiData.phone || user.phone || '',
+    location: aiData.address || user.location || '',
+    role: user.currentProfession || '',
+    summary: aiData.aboutMe || user.professionalSummary || '',
+    experiences: (aiData.experiences || []).map((e: any) => ({
+      title: e.role,
+      company: e.company,
+      location: '',
+      startDate: e.period?.split('–')[0]?.trim() || '',
+      endDate: e.period?.split('–')[1]?.trim() || '',
+      current: e.period?.toLowerCase().includes('presente') || false,
+      description: e.description,
+    })),
+    education: (aiData.education || []).map((e: any) => ({
+      degree: e.degree,
+      institution: e.school,
+      location: '',
+      year: e.period || '',
+    })),
+    skills: aiData.skills || user.skills || [],
+    languages: (user.languages || []).map((l: any) => ({
+      name: l.language,
+      level: l.proficiency,
+    })),
+    industry: user.interestedAreas?.[0] || '',
+    experienceYears: user.experiences?.length || 0,
+  };
 }
 
-export function listTemplates(req: Request, res: Response) {
-  const templates = [
-    { 
-      id: 'executivo', 
-      name: 'Executivo', 
-      category: 'Formal',
-      description: 'Ideal para cargos de gestão e liderança'
-    },
-    { 
-      id: 'tech-modern', 
-      name: 'Tech Modern', 
-      category: 'Tecnologia',
-      description: 'Perfeito para profissionais de TI'
-    },
-    { 
-      id: 'minimalista', 
-      name: 'Minimalista', 
-      category: 'Clean',
-      description: 'Design limpo para qualquer área'
-    },
-    { 
-      id: 'criativo', 
-      name: 'Criativo', 
-      category: 'Design',
-      description: 'Para designers e criativos'
-    },
-    { 
-      id: 'ats-optimized', 
-      name: 'ATS Optimized', 
-      category: 'Robôs',
-      description: 'Otimizado para filtros automáticos'
+// ============================================================================
+// POST /api/cv/generate
+// Gera CV com IA + PDF com template — substitui createResume do resumeController
+// ============================================================================
+export const generateCV = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const user = await User.findById(req.userId || req.user?._id);
+
+    if (!user) {
+      res.status(404).json({ success: false, message: 'Utilizador não encontrado.' });
+      return;
     }
-  ];
-  
-  return res.json({ 
-    success: true,
-    templates,
-    total: templates.length
-  });
-}
+
+    // 1. IA gera conteúdo otimizado
+    const aiData = await generateResumeAI(user);
+
+    // 2. Mapeia para UserCVData e gera PDF com Playwright
+    const cvData = mapToUserCVData(user, aiData);
+    const pdfBuffer = await generateCVPDF(cvData);
+
+    // 3. Guarda no MongoDB (CV.ts — modelo unificado)
+    const cv = await CV.create({
+      userId: user._id,
+      title: `CV — ${user.fullName}`,
+      generatedByAI: true,
+      isPremium: user.isPremium(),
+      cvData: {
+        personalInfo: {
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone,
+          location: user.location,
+          profilePhoto: user.profilePhoto,
+        },
+        professionalSummary: aiData.aboutMe,
+        experiences: user.experiences || [],
+        education: user.education || [],
+        skills: user.skills || [],
+        languages: user.languages || [],
+      },
+      generatedContent: {
+        optimizedSummary: aiData.aboutMe,
+        keywords: aiData.skills,
+      },
+      status: 'generated',
+    });
+
+    // 4. Incrementa estatísticas do utilizador
+    user.stats.cvGenerated += 1;
+    await user.save();
+
+    // 5. Devolve PDF diretamente
+    // Quando tiveres R2 configurado, faz upload e devolve a URL em vez do buffer
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="cv_${user.fullName.replace(/\s+/g, '_')}.pdf"`
+    );
+    res.setHeader('X-CV-Id', cv._id.toString()); // ID disponível no header da resposta
+    res.send(pdfBuffer);
+  }
+);
+
+// ============================================================================
+// GET /api/cv
+// Lista todos os CVs do utilizador
+// ============================================================================
+export const getMyCVs = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const cvs = await CV.find({ userId: req.userId || req.user?._id })
+      .sort({ createdAt: -1 })
+      .select('-cvData'); // Não devolve os dados completos na listagem
+
+    res.json({ success: true, count: cvs.length, data: cvs });
+  }
+);
+
+// ============================================================================
+// GET /api/cv/latest
+// Devolve o CV mais recente — substitui getLatestResume
+// ============================================================================
+export const getLatestCV = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const cv = await CV.findOne({ userId: req.userId || req.user?._id })
+      .sort({ createdAt: -1 });
+
+    if (!cv) {
+      res.status(404).json({ success: false, message: 'Nenhum currículo encontrado.' });
+      return;
+    }
+
+    res.json({ success: true, data: cv });
+  }
+);
+
+// ============================================================================
+// GET /api/cv/:id
+// Devolve CV por ID — substitui getResumeById
+// ============================================================================
+export const getCVById = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const cv = await CV.findById(req.params.id);
+
+    if (!cv) {
+      res.status(404).json({ success: false, message: 'Currículo não encontrado.' });
+      return;
+    }
+
+    // Garante que o CV pertence ao utilizador autenticado
+    if (cv.userId.toString() !== (req.userId || req.user?._id?.toString())) {
+      res.status(403).json({ success: false, message: 'Acesso negado.' });
+      return;
+    }
+
+    // Atualiza lastUsedAt
+    cv.lastUsedAt = new Date();
+    await cv.save();
+
+    res.json({ success: true, data: cv });
+  }
+);
+
+// ============================================================================
+// GET /api/cv/:id/download
+// Download PDF — premium only (middleware premiumOnly aplicado na route)
+// Substitui downloadResumePDF mas usa generator.ts em vez de pdfService
+// ============================================================================
+export const downloadCVPDF = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const cv = await CV.findById(req.params.id);
+
+    if (!cv) {
+      res.status(404).json({ success: false, message: 'Currículo não encontrado.' });
+      return;
+    }
+
+    if (cv.userId.toString() !== (req.userId || req.user?._id?.toString())) {
+      res.status(403).json({ success: false, message: 'Acesso negado.' });
+      return;
+    }
+
+    // Se já tem PDF em storage, redireciona diretamente
+    if (cv.pdfUrl) {
+      res.redirect(cv.pdfUrl);
+      return;
+    }
+
+    // Caso contrário regenera com Playwright
+    const cvData = mapToUserCVData(
+      { ...cv.cvData.personalInfo, ...req.user },
+      {
+        fullName: cv.cvData.personalInfo.fullName,
+        email: cv.cvData.personalInfo.email,
+        phone: cv.cvData.personalInfo.phone,
+        address: cv.cvData.personalInfo.location,
+        aboutMe: cv.cvData.professionalSummary,
+        experiences: (cv.cvData.experiences || []).map((e: any) => ({
+          role: e.position,
+          company: e.company,
+          period: `${e.startMonth || ''} ${e.startYear || ''} – ${e.current ? 'Presente' : `${e.endMonth || ''} ${e.endYear || ''}`}`.trim(),
+          description: e.description,
+        })),
+        education: (cv.cvData.education || []).map((e: any) => ({
+          degree: e.degree,
+          school: e.institution,
+          period: `${e.startYear || ''} – ${e.endYear || ''}`.trim(),
+        })),
+        skills: cv.cvData.skills,
+      }
+    );
+
+    const pdfBuffer = await generateCVPDF(cvData);
+
+    // Atualiza stats
+    cv.lastUsedAt = new Date();
+    cv.appliedJobsCount += 1;
+    await cv.save();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="cv_${cv.cvData.personalInfo.fullName.replace(/\s+/g, '_')}.pdf"`
+    );
+    res.send(pdfBuffer);
+  }
+);
+
+// ============================================================================
+// DELETE /api/cv/:id
+// ============================================================================
+export const deleteCV = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const cv = await CV.findById(req.params.id);
+
+    if (!cv) {
+      res.status(404).json({ success: false, message: 'Currículo não encontrado.' });
+      return;
+    }
+
+    if (cv.userId.toString() !== (req.userId || req.user?._id?.toString())) {
+      res.status(403).json({ success: false, message: 'Acesso negado.' });
+      return;
+    }
+
+    await cv.deleteOne();
+    res.json({ success: true, message: 'Currículo eliminado.' });
+  }
+);

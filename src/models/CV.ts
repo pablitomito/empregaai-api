@@ -3,6 +3,14 @@ import mongoose, { Document, Schema, Types } from 'mongoose';
 export interface ICV extends Document {
   userId: Types.ObjectId;
 
+  // ── Metadados ──────────────────────────────────────────────────────────────
+  title: string;                // ex: "CV para Ryanair"
+  isPremium: boolean;           // se o template é premium
+  generatedByAI: boolean;       // se foi gerado pela IA
+  appliedJobsCount: number;     // quantas candidaturas usaram este CV
+  lastUsedAt?: Date;
+
+  // ── Dados estruturados do CV ───────────────────────────────────────────────
   cvData: {
     personalInfo: {
       fullName: string;
@@ -41,26 +49,28 @@ export interface ICV extends Document {
     }[];
   };
 
-  // Vaga relacionada (opcional)
+  // ── Vaga relacionada (opcional) ────────────────────────────────────────────
   jobId?: Types.ObjectId;
   jobTitle?: string;
   companyName?: string;
 
-  // Conteúdo gerado pela IA
+  // ── Conteúdo gerado pela IA ────────────────────────────────────────────────
   generatedContent: {
     optimizedSummary?: string;
     coverLetter?: string;
     keywords?: string[];
   };
 
-  // PDF
+  // ── PDF ───────────────────────────────────────────────────────────────────
   pdfUrl?: string;
   pdfFileName?: string;
 
-  // ✅ FIX: template enum alinhado com os templates reais em cv-generator/templates/
+  // ── Template & configurações ──────────────────────────────────────────────
+  // Alinhado com os templates reais em cv-generator/templates/
   template: 'executivo' | 'tech-modern' | 'minimalista' | 'criativo' | 'ats-optimized';
-
   language: 'pt' | 'en' | 'es';
+
+  // ── Status ────────────────────────────────────────────────────────────────
   status: 'draft' | 'generated' | 'sent' | 'failed';
   sentAt?: Date;
 
@@ -77,6 +87,18 @@ const cvSchema = new Schema<ICV>(
       index: true,
     },
 
+    // Metadados
+    title: {
+      type: String,
+      default: 'Meu Currículo',
+      trim: true,
+    },
+    isPremium: { type: Boolean, default: false },
+    generatedByAI: { type: Boolean, default: true },
+    appliedJobsCount: { type: Number, default: 0 },
+    lastUsedAt: Date,
+
+    // Dados do CV
     cvData: {
       personalInfo: {
         fullName: { type: String, required: true },
@@ -126,20 +148,23 @@ const cvSchema = new Schema<ICV>(
       ],
     },
 
+    // Vaga relacionada
     jobId: { type: Schema.Types.ObjectId, ref: 'Job' },
     jobTitle: String,
     companyName: String,
 
+    // Conteúdo IA
     generatedContent: {
       optimizedSummary: String,
       coverLetter: String,
       keywords: [String],
     },
 
+    // PDF
     pdfUrl: String,
     pdfFileName: String,
 
-    // ✅ FIX: alinhado com cv-generator/templates/
+    // Template — enum alinhado com cv-generator/templates/
     template: {
       type: String,
       enum: ['executivo', 'tech-modern', 'minimalista', 'criativo', 'ats-optimized'],

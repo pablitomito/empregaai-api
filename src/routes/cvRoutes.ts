@@ -1,25 +1,40 @@
-import { Router } from "express";
-import { generateCV, listTemplates } from "../controllers/cvController";
-import { saveCVData } from "../controllers/cvDataController";
+import { Router } from 'express';
+import { protect, premiumOnly, requireCompleteProfile } from '../middleware/auth';
+import {
+  generateCV,
+  getMyCVs,
+  getLatestCV,
+  getCVById,
+  downloadCVPDF,
+  deleteCV,
+} from '../controllers/cvController';
 
 const router = Router();
 
-/**
- * 1) Salvar dados do CV antes do pagamento
- * O frontend envia userId + userData
- * O backend guarda no User.pendingCVData
- */
-router.post("/save-data", saveCVData);
+// Todas as rotas requerem autenticação
+router.use(protect);
 
-/**
- * 2) Gerar CV manualmente (opcional)
- * Útil para testes sem Stripe
- */
-router.post("/generate", generateCV);
+// POST /api/cv/generate
+// Gerar CV com IA — requer perfil completo
+router.post('/generate', requireCompleteProfile, generateCV);
 
-/**
- * 3) Listar templates disponíveis
- */
-router.get("/templates", listTemplates);
+// GET /api/cv
+// Listar todos os CVs do utilizador
+router.get('/', getMyCVs);
+
+// GET /api/cv/latest
+// CV mais recente
+router.get('/latest', getLatestCV);
+
+// GET /api/cv/:id
+// CV por ID
+router.get('/:id', getCVById);
+
+// GET /api/cv/:id/download
+// Download PDF — premium only
+router.get('/:id/download', premiumOnly, downloadCVPDF);
+
+// DELETE /api/cv/:id
+router.delete('/:id', deleteCV);
 
 export default router;
